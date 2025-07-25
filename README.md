@@ -71,5 +71,3 @@ Bu proje, **Spring Boot** ve **Elasticsearch** kullanarak geliştirilmiş modern
 - **8GB RAM**
 - **10GB Disk Alanı**
 - **SSD Depolama**
-
-## 🚀 Kurulum
