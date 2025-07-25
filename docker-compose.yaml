@@ -1,0 +1,103 @@
+# ==================== DOCKER COMPOSE KONFİGÜRASYONU ====================
+# 
+# Bu dosya Elasticsearch, Kibana ve PostgreSQL servislerini tanımlar.
+# Basit kurulum için SSL ve güvenlik devre dışı bırakılmıştır.
+# 
+# @author Berat Kulcu
+# @version 1.0
+# @since 2025-07-25
+
+version: '3.8' # Docker Compose versiyonu
+
+# ==================== SERVİSLER ====================
+
+services:
+  
+  # ==================== ELASTICSEARCH SERVİSİ ====================
+  
+  elasticsearch:
+    # Elasticsearch Docker image'ı
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    # Container adı
+    container_name: elasticsearch
+    # Ortam değişkenleri
+    environment:
+      # Tek node kurulumu (development için)
+      - discovery.type=single-node
+      # Güvenlik devre dışı (basit kurulum için)
+      - xpack.security.enabled=false
+      # JVM heap boyutu (512MB)
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    # Port mapping (host:container)
+    ports:
+      - "9200:9200" # HTTP API portu
+      - "9300:9300" # Transport portu
+    # Kalıcı veri saklama
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    # Network tanımı
+    networks:
+      - elastic
+
+  # ==================== KIBANA SERVİSİ ====================
+  
+  kibana:
+    # Kibana Docker image'ı
+    image: docker.elastic.co/kibana/kibana:8.12.0
+    # Container adı
+    container_name: kibana
+    # Ortam değişkenleri
+    environment:
+      # Elasticsearch bağlantı adresi
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    # Port mapping
+    ports:
+      - "5601:5601" # Kibana web arayüzü portu
+    # Elasticsearch'e bağımlılık
+    depends_on:
+      - elasticsearch
+    # Network tanımı
+    networks:
+      - elastic
+
+  # ==================== POSTGRESQL SERVİSİ ====================
+  
+  postgres:
+    # PostgreSQL Docker image'ı
+    image: postgres:15
+    # Container adı
+    container_name: postgres-elastic
+    # Ortam değişkenleri
+    environment:
+      # Veritabanı adı
+      POSTGRES_DB: elasticsearch_demo
+      # Kullanıcı adı
+      POSTGRES_USER: elastic_user
+      # Şifre
+      POSTGRES_PASSWORD: elastic_pass
+    # Port mapping (5433 kullanılıyor çünkü 5432 zaten kullanımda olabilir)
+    ports:
+      - "5433:5432" # PostgreSQL portu
+    # Kalıcı veri saklama
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Network tanımı
+    networks:
+      - elastic
+
+# ==================== VOLUME TANIMLARI ====================
+
+volumes:
+  # Elasticsearch veri volume'u
+  elasticsearch_data:
+    driver: local
+  # PostgreSQL veri volume'u
+  postgres_data:
+    driver: local
+
+# ==================== NETWORK TANIMI ====================
+
+networks:
+  # Servisler arası iletişim için bridge network
+  elastic:
+    driver: bridge
